@@ -1,0 +1,44 @@
+---
+layout: null
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENS Weekly Planners</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#20242b;background:#f5f7f8}*{box-sizing:border-box}body{margin:0}header{background:#760d32;color:white;padding:22px 20px}header .inner,main{max-width:850px;margin:auto}header h1{margin:0;font-size:1.45rem}header p{margin:6px 0 0;opacity:.9}main{padding:32px 20px}h2{font-size:1.55rem;margin:0 0 8px}.subtitle{color:#56616b;margin:0 0 26px}.item{background:white;border:1px solid #dde4e8;border-radius:12px;padding:17px 20px;margin:12px 0;display:flex;justify-content:space-between;align-items:center;gap:12px}.item a{color:#760d32;font-weight:700;text-decoration:none}.item a:hover{text-decoration:underline}.pill{background:#e6f5f5;color:#006e76;padding:8px 12px;border-radius:8px;font-size:.85rem;white-space:nowrap}.empty{background:white;padding:22px;border-radius:12px;border:1px solid #dde4e8}footer{font-size:.8rem;color:#66727d;margin-top:30px}code{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<header><div class="inner"><h1>ENS | Weekly Planners</h1><p>Subject planners for parents</p></div></header>
+<main><h2 id="heading">Weekly Planners</h2><p class="subtitle" id="description">Select a subject to view its PDF.</p><div id="files"></div><footer>Only publicly approved school documents should be uploaded to this site.</footer></main>
+<script>
+// Jekyll automatically collects PDF files from the repository at publishing time.
+const pdfs = [
+{% for file in site.static_files %}{% assign ext = file.extname | downcase %}{% if ext == '.pdf' %}
+{path: {{ file.path | jsonify }}, url: {{ file.path | relative_url | jsonify }} },
+{% endif %}{% endfor %}
+];
+const params = new URLSearchParams(location.search);
+const weekInput = (params.get('week') || '').trim();
+const gradeInput = (params.get('grade') || '').trim();
+const clean = value => value.toLowerCase().replace(/[^a-z0-9]/g,'');
+const week = clean(weekInput).replace(/^week/,'');
+const grade = clean(gradeInput).replace(/^grade/,'');
+const heading = document.getElementById('heading');
+const description = document.getElementById('description');
+const holder = document.getElementById('files');
+if(!week || !grade){
+ heading.textContent='Weekly Planners';
+ description.textContent='Open this site using a link from your weekly PowerPoint to see the PDFs for your grade and week.';
+ holder.innerHTML='<div class="empty">Example link: <code>?week=8&amp;grade=6</code></div>';
+}else{
+ heading.textContent=`Grade ${gradeInput.replace(/^grade\s*/i,'')} | Week ${weekInput.replace(/^week\s*/i,'')}`;
+ const matches=pdfs.filter(f=>{const parts=f.path.split('/').filter(Boolean).map(clean);return parts.includes('week'+week) && parts.includes('grade'+grade);}).sort((a,b)=>a.path.localeCompare(b.path));
+ description.textContent=`${matches.length} subject planner${matches.length===1?'':'s'} available. Click a subject to open its PDF.`;
+ if(!matches.length){holder.innerHTML='<div class="empty">No PDFs have been uploaded for this grade and week yet. Check the link or try again later.</div>'}
+ else matches.forEach(f=>{const name=f.path.split('/').pop().replace(/\.pdf$/i,'').replace(/[-_]+/g,' ');const item=document.createElement('div');item.className='item';const a=document.createElement('a');a.href=f.url;a.target='_blank';a.rel='noopener';a.textContent=name;const tag=document.createElement('span');tag.className='pill';tag.textContent='View PDF ↗';item.append(a,tag);holder.append(item);});
+}
+</script>
+</body></html>
