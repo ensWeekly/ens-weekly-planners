@@ -38,7 +38,7 @@ if(!week || !grade){
  const matches=pdfs.filter(f=>{const parts=f.path.split('/').filter(Boolean).map(clean);return parts.includes('week'+week) && parts.includes('grade'+grade);}).sort((a,b)=>a.path.localeCompare(b.path));
  description.textContent=`${matches.length} subject planner${matches.length===1?'':'s'} available. Click a subject to open its PDF.`;
  if(!matches.length){holder.innerHTML='<div class="empty">No PDFs have been uploaded for this grade and week yet. Check the link or try again later.</div>'}
- else matches.forEach(f=>{const name=f.path.split('/').pop().replace(/\.pdf$/i,'').replace(/[-_]+/g,' ');const item=document.createElement('div');item.className='item';const a=document.createElement('a');a.href=f.url;a.target='_blank';a.rel='noopener';a.textContent=name;const tag=document.createElement('span');tag.className='pill';tag.textContent='View PDF ↗';item.append(a,tag);holder.append(item);});
+ else matches.forEach(f=>{const name=f.path.split('/').pop().replace(/\.pdf$/i,'').replace(/[-_]+/g,' ');const item=document.createElement('div');item.className='item';const a=document.createElement('a');a.href=f.url;a.target='_blank';a.rel='noopener';a.textContent=name;item.append(a);holder.append(item);});
 }
 </script>
 </body></html>
