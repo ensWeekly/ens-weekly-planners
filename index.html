@@ -41,4 +41,11 @@ if(!week || !grade){
  else matches.forEach(f=>{const name=f.path.split('/').pop().replace(/\.pdf$/i,'').replace(/[-_]+/g,' ');const item=document.createElement('div');item.className='item';const a=document.createElement('a');a.href=f.url;a.target='_blank';a.rel='noopener';a.textContent=name;item.append(a);holder.append(item);});
 }
 </script>
-</body></html>
+</body>
+<a class="item"
+   href="Parent%20Handbook.pdf"
+   target="_blank"
+   rel="noopener noreferrer">
+  📄 Parent Handbook
+</a>
+</html>
