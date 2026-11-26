@@ -1,0 +1,96 @@
+---
+layout: null
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENS | Exam Resources</title>
+<style>
+:root{--teal:#005b65;--dark:#063f47;--burg:#850d39;--pale:#e3f4f3;--pink:#f8e7ed;--line:#dce6e7;--ink:#17333b}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#f4f8f8}header{background:white;border-bottom:4px solid var(--teal);padding:22px max(5vw,20px);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.brand{font-size:20px;font-weight:700;color:var(--teal)}.brand small{display:block;font-size:15px;margin-bottom:4px}header a{color:var(--teal);text-decoration:none;font-size:14px}main{max-width:1050px;margin:auto;padding:40px 24px 60px}.eyebrow{color:var(--burg);font-size:14px;letter-spacing:1.6px;text-transform:uppercase;font-weight:bold}h1{color:var(--dark);font-size:clamp(30px,5vw,48px);margin:10px 0 12px;line-height:1.1}.intro{color:#4c6268;line-height:1.5;margin:0 0 26px}.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}.filters label{font-size:13px;font-weight:bold;color:var(--dark);display:flex;flex-direction:column;gap:7px}select{font:inherit;background:white;border:1px solid #b5cacc;border-radius:8px;padding:12px;color:var(--dark);min-width:180px}.list{display:grid;gap:12px}.item{display:flex;align-items:center;gap:15px;background:white;padding:18px;border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--dark)}.item:hover,.item:focus-visible{border-color:var(--teal);box-shadow:0 3px 12px #005b6519}.pdf{background:var(--pink);color:var(--burg);font-size:12px;font-weight:bold;padding:14px 10px;border-radius:7px}.item strong{font-size:18px;display:block;overflow-wrap:anywhere}.item small{display:block;color:#63747a;margin-top:5px}.open{margin-left:auto;color:var(--teal);font-size:14px;font-weight:bold;white-space:nowrap}.empty{background:white;border:1px dashed #a9c1c3;border-radius:12px;padding:24px;line-height:1.5}.count{font-size:14px;color:#60747b;margin:0 0 12px}footer{border-top:1px solid var(--line);padding:20px;text-align:center;color:var(--burg);font-size:14px}footer a{color:inherit}@media(max-width:500px){main{padding:28px 16px}.item{padding:13px;gap:10px}.open{font-size:12px}.filters label{flex:1}select{min-width:0;width:100%}}
+</style>
+</head>
+<body>
+<header><div class="brand"><small lang="ar" dir="rtl">مدارس الإمارات الوطنية</small>Emirates National Schools</div><a href="https://www.ens.sch.ae/">ENS website ↗</a></header>
+<main><div class="eyebrow" id="section">Exam resources</div><h1 id="heading">Exam Resources</h1><p class="intro" id="intro">Choose your grade and resource type to access your subject PDFs.</p>
+<div class="filters"><label for="grade">Grade<select id="grade"></select></label><label for="kind">Resource type<select id="kind"><option value="study">Study Guides</option><option value="revision">Revision Sheets</option></select></label></div>
+<p id="count" class="count" aria-live="polite"></p><div id="files" class="list"></div><noscript>Please enable JavaScript to view the resources.</noscript></main>
+<footer>Emirates National Schools · <a href="https://www.ens.sch.ae/">www.ens.sch.ae</a></footer>
+<script id="file-data" type="application/json">[
+{%- assign separator = '' -%}
+{%- for file in site.static_files -%}
+{%- assign folder = file.path | slice: 0, 12 -%}
+{%- assign ext = file.extname | downcase -%}
+{%- if folder == '/exam-files/' and ext == '.pdf' -%}
+{{ separator }}{"name":{{ file.name | jsonify }},"path":{{ file.path | remove_first: '/' | jsonify }}}
+{%- assign separator = ',' -%}
+{%- endif -%}
+{%- endfor -%}
+]</script>
+<script>
+'use strict';
+const grades=['6','7','8','9','10','11','12','dp11','dp12'];
+const gradeLabel=g=>g.startsWith('dp')?'Grade '+g.slice(2)+' (DP)':'Grade '+g;
+const typeLabel=k=>k==='study'?'Study Guides':'Revision Sheets';
+const grade=document.getElementById('grade'),kind=document.getElementById('kind'),files=document.getElementById('files');
+for(const g of grades){const o=document.createElement('option');o.value=g;o.textContent=gradeLabel(g);grade.append(o);}
+const q=new URLSearchParams(location.search);grade.value=grades.includes(q.get('grade'))?q.get('grade'):'6';kind.value=q.get('type')==='revision'?'revision':'study';
+// Optional exact filename overrides for documents whose type is not in their name.
+// Add entries only after checking the PDF contents. Use lower-case filename, including .pdf.
+const overrides = {
+ // 'g6-islamic-w13.pdf': {grade:'6',kind:'study',subject:'Islamic Studies',detail:''},
+};
+function parseName(name){
+ if(!/\.pdf$/i.test(name))return null;
+ if(Object.prototype.hasOwnProperty.call(overrides,name.toLowerCase()))return overrides[name.toLowerCase()];
+ let text=name.replace(/\.pdf$/i,'').normalize('NFKC').replace(/[_,.\-–—]+/g,' ').replace(/\s+/g,' ').trim();
+ // Accept G6, Gr 6, Grade 6, Gr.6, DP11, DP Grade 11, Grade 11 DP, etc.
+ const dp=/(?:^|\s)(?:dp\s*(?:(?:grade|gr|g)\s*)?(11|12)|(?:(?:grade|gr|g)\s*)?(11|12)\s*dp)(?=\s|$)/i;
+ const explicit=/(?:^|\s)(?:grade|gr|g)\s*(1[012]|[6-9])(?=\s|$)/i;
+ let m=text.match(dp), g;
+ if(m){g='dp'+(m[1]||m[2]);text=text.replace(dp,' ').trim();text=text.replace(/\b(?:grade|gr|g)\s*(?:11|12)\b/ig,' ').trim();}
+ else if((m=text.match(explicit))){g=m[1];text=text.replace(explicit,' ').trim();if((g==='11'||g==='12')&&/\bdp\b/i.test(text)){g='dp'+g;text=text.replace(/\bdp\b/ig,' ').trim();}}
+ else if((m=text.match(/^(1[012]|[6-9])\s+|\s+(1[012]|[6-9])$/))){g=m[1]||m[2];text=text.replace(m[0],' ').trim();}
+ else if((m=text.match(/\bUAE\s*(1[012]|[6-9])(?=\s|$)/i))){g=m[1];text=text.replace(m[0],'UAE');}
+ else return null;
+ const study=/\bstudy\s*guides?\b/i;
+ const revision=/\brevision(?:\s*(?:sheets?|worksheets?|packs?|guides?|papers?))?\b/i;
+ const isStudy=study.test(text),isRevision=revision.test(text);
+ if(isStudy===isRevision)return null; // missing or conflicting resource type
+ const k=isStudy?'study':'revision';
+ const match=text.match(isStudy?study:revision);
+ let before=text.slice(0,match.index).trim(),after=text.slice(match.index+match[0].length).trim();
+ let detail='';
+ // Remove common descriptive suffixes from the subject, not from the PDF link.
+ const descriptor=/\b(?:with\s+answers?|answer\s*keys?|term\s*\d+|final\b|week\s*\d+|w\d+|202[0-9]\b)/i;
+ if(before){detail=after;const d=before.match(descriptor);if(d){detail=[before.slice(d.index),detail].filter(Boolean).join(' · ');before=before.slice(0,d.index).trim();}}
+ else {const d=after.match(descriptor);if(d){detail=after.slice(d.index);after=after.slice(0,d.index).trim();}before=after;}
+ let subject=before.replace(/\s+/g,' ').trim();if(!subject)return null;
+ const aliases={'ela':'English (ELA)','english language arts':'English (ELA)','islamic':'Islamic Studies','islamic studies':'Islamic Studies','uae':'UAE Studies','ict':'ICT','cs':'Computer Science','maths':'Maths','math':'Maths'};
+ subject=aliases[subject.toLowerCase()]||subject.replace(/\b[a-z]/g,c=>c.toUpperCase());
+ return {grade:g,kind:k,subject,detail};
+}
+let all=[],unclassified=[],dataError=false;
+try{const raw=JSON.parse(document.getElementById('file-data').textContent);for(const f of raw){const parsed=parseName(f.name);if(parsed)all.push({...f,parsed});else unclassified.push(f.name);}}catch(e){dataError=true;}
+if(q.get('check')==='1'){
+ const panel=document.createElement('details');panel.open=true;panel.className='empty';panel.style.marginTop='24px';
+ const summary=document.createElement('summary');summary.textContent='Filename check: '+unclassified.length+' unclassified PDF(s)';panel.append(summary);
+ const note=document.createElement('p');note.textContent='Check these PDFs and rename them with a grade and resource type. They are not shown in student resource lists.';panel.append(note);
+ const ul=document.createElement('ul');for(const name of unclassified.sort()){const li=document.createElement('li');li.textContent=name;ul.append(li);}panel.append(ul);files.after(panel);
+}
+function render(){
+ const g=grade.value,k=kind.value;
+ document.getElementById('heading').textContent=gradeLabel(g)+' '+typeLabel(k);
+ document.getElementById('section').textContent=(g.startsWith('dp')?'Diploma Programme':Number(g)<=8?'Middle School':'High School')+' · Exam Resources';
+ document.title='ENS | '+gradeLabel(g)+' '+typeLabel(k);
+ document.getElementById('intro').textContent='Select a subject below to open the PDF in a new tab.';
+ const matches=all.filter(f=>f.parsed.grade===g&&f.parsed.kind===k).sort((a,b)=>a.parsed.subject.localeCompare(b.parsed.subject,undefined,{numeric:true})||a.name.localeCompare(b.name,undefined,{numeric:true}));
+ files.replaceChildren();document.getElementById('count').textContent=matches.length+' '+(matches.length===1?'resource':'resources');
+ if(!matches.length){const p=document.createElement('div');p.className='empty';p.textContent=dataError?'The resource list could not load. Please check that GitHub Pages is building with Jekyll.':'No matching PDFs have been published for this category yet. Please check again later.';files.append(p);return;}
+ for(const f of matches){const a=document.createElement('a');a.className='item';a.href=f.path.split('/').map(encodeURIComponent).join('/');a.target='_blank';a.rel='noopener';const icon=document.createElement('span');icon.className='pdf';icon.textContent='PDF';const body=document.createElement('span');const title=document.createElement('strong');title.textContent=f.parsed.subject;const sub=document.createElement('small');sub.textContent=typeLabel(k)+(f.parsed.detail?' · '+f.parsed.detail:'');body.append(title,sub);const open=document.createElement('span');open.className='open';open.textContent='Open PDF ↗';a.append(icon,body,open);files.append(a);}
+}
+function change(){const url=new URL(location.href);url.searchParams.set('grade',grade.value);url.searchParams.set('type',kind.value);history.replaceState(null,'',url);render();}
+grade.addEventListener('change',change);kind.addEventListener('change',change);render();
+</script>
+</body>
+</html>
