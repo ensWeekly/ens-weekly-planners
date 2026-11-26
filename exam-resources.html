@@ -19,9 +19,9 @@ layout: null
 <script id="file-data" type="application/json">[
 {%- assign separator = '' -%}
 {%- for file in site.static_files -%}
-{%- assign folder = file.path | slice: 0, 12 -%}
+{%- assign folder = file.path | downcase -%}
 {%- assign ext = file.extname | downcase -%}
-{%- if folder == '/exam-files/' and ext == '.pdf' -%}
+{%- if folder contains '/exam-files/' and ext == '.pdf' -%}
 {{ separator }}{"name":{{ file.name | jsonify }},"path":{{ file.path | remove_first: '/' | jsonify }}}
 {%- assign separator = ',' -%}
 {%- endif -%}
@@ -70,11 +70,11 @@ function parseName(name){
  subject=aliases[subject.toLowerCase()]||subject.replace(/\b[a-z]/g,c=>c.toUpperCase());
  return {grade:g,kind:k,subject,detail};
 }
-let all=[],unclassified=[],dataError=false;
-try{const raw=JSON.parse(document.getElementById('file-data').textContent);for(const f of raw){const parsed=parseName(f.name);if(parsed)all.push({...f,parsed});else unclassified.push(f.name);}}catch(e){dataError=true;}
+let all=[],unclassified=[],dataError=false,totalPDFs=0;
+try{const raw=JSON.parse(document.getElementById('file-data').textContent);totalPDFs=raw.length;for(const f of raw){const parsed=parseName(f.name);if(parsed)all.push({...f,parsed});else unclassified.push(f.name);}}catch(e){dataError=true;}
 if(q.get('check')==='1'){
  const panel=document.createElement('details');panel.open=true;panel.className='empty';panel.style.marginTop='24px';
- const summary=document.createElement('summary');summary.textContent='Filename check: '+unclassified.length+' unclassified PDF(s)';panel.append(summary);
+ const summary=document.createElement('summary');summary.textContent='Folder check: '+totalPDFs+' PDF(s) found · '+unclassified.length+' unclassified PDF(s)';panel.append(summary);
  const note=document.createElement('p');note.textContent='Check these PDFs and rename them with a grade and resource type. They are not shown in student resource lists.';panel.append(note);
  const ul=document.createElement('ul');for(const name of unclassified.sort()){const li=document.createElement('li');li.textContent=name;ul.append(li);}panel.append(ul);files.after(panel);
 }
@@ -86,7 +86,7 @@ function render(){
  document.getElementById('intro').textContent='Select a subject below to open the PDF in a new tab.';
  const matches=all.filter(f=>f.parsed.grade===g&&f.parsed.kind===k).sort((a,b)=>a.parsed.subject.localeCompare(b.parsed.subject,undefined,{numeric:true})||a.name.localeCompare(b.name,undefined,{numeric:true}));
  files.replaceChildren();document.getElementById('count').textContent=matches.length+' '+(matches.length===1?'resource':'resources');
- if(!matches.length){const p=document.createElement('div');p.className='empty';p.textContent=dataError?'The resource list could not load. Please check that GitHub Pages is building with Jekyll.':'No matching PDFs have been published for this category yet. Please check again later.';files.append(p);return;}
+ if(!matches.length){const p=document.createElement('div');p.className='empty';p.textContent=dataError?'The resource list could not load. Please check that GitHub Pages is building with Jekyll.':(totalPDFs===0?'No PDFs were found in the exam-files folder. Please check that the PDFs have been uploaded and published.':'No matching PDFs have been published for this category yet. Please check again later.');files.append(p);return;}
  for(const f of matches){const a=document.createElement('a');a.className='item';a.href=f.path.split('/').map(encodeURIComponent).join('/');a.target='_blank';a.rel='noopener';const icon=document.createElement('span');icon.className='pdf';icon.textContent='PDF';const body=document.createElement('span');const title=document.createElement('strong');title.textContent=f.parsed.subject;const sub=document.createElement('small');sub.textContent=typeLabel(k)+(f.parsed.detail?' · '+f.parsed.detail:'');body.append(title,sub);const open=document.createElement('span');open.className='open';open.textContent='Open PDF ↗';a.append(icon,body,open);files.append(a);}
 }
 function change(){const url=new URL(location.href);url.searchParams.set('grade',grade.value);url.searchParams.set('type',kind.value);history.replaceState(null,'',url);render();}
